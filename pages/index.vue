@@ -34,7 +34,7 @@ useSeoMeta({
       </div>
     </div>
 
-    <div class="mx-auto mt-12 w-full max-w-7xl text-left">
+    <div class="mx-auto mt-12 w-full max-w-7xl px-2 text-left md:px-4 lg:px-0">
       <h2 class="text-center text-2xl font-black sm:text-3xl">How it works</h2>
       <p class="mx-auto mt-2 max-w-2xl text-center text-sm" :style="{ color: 'var(--muted)' }">
         Launch and manage your sovereign storefront with open identity and portable infrastructure.
