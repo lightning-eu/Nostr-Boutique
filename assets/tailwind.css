@@ -97,8 +97,17 @@ a {
   filter: invert(1);
 }
 
+.hero-panel {
+  background-image: url('/Background-Shop.png');
+}
+
+:root[data-theme='dark'] .brand-logo--hero {
+  filter: invert(1);
+}
+
 :root[data-theme='dark'] .hero-panel {
-  color: #000;
+  background-image: url('/Background-Shop-Dark.png');
+  color: #fff;
 }
 
 @keyframes fade-in-up {

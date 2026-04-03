@@ -8,12 +8,7 @@ useSeoMeta({
 <template>
   <section class="w-full pb-14 text-center sm:pb-20">
     <div
-      class="hero-panel relative w-full overflow-hidden px-4 py-8 sm:px-8 sm:py-10"
-      :style="{
-        backgroundImage: 'url(/Background-Shop.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      }"
+      class="hero-panel relative w-full overflow-hidden bg-cover bg-center px-4 py-8 sm:px-8 sm:py-10"
     >
       <div class="mx-auto max-w-3xl">
         <div class="flex justify-center">
