@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+* {
+  @apply text-purple-950;
+}
+a {
+  @apply accent-purple-900 underline hover:no-underline;
+}
