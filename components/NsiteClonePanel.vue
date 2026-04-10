@@ -11,19 +11,11 @@ const {
 
 const route = useRoute()
 const { theme } = useThemeMode()
+const PORTAL_SITE_KEY = 'portal'
 
 const sourceNpub = computed(() => {
   const queryNpub = typeof route.query.source === 'string' ? route.query.source.trim() : ''
   return queryNpub || defaultSourceNpub
-})
-
-const cloneAs = computed(() => {
-  const queryClone = typeof route.query.clone === 'string' ? route.query.clone.trim().toLowerCase() : ''
-  return queryClone === 'named' ? 'named' : 'root'
-})
-
-const namedSiteKey = computed(() => {
-  return typeof route.query.d === 'string' ? route.query.d.trim() : ''
 })
 
 const isLightMode = computed(() => theme.value === 'light')
@@ -75,6 +67,7 @@ const canNewcomerDeploy = computed(() => {
 const existingBusy = ref(false)
 const existingError = ref('')
 const existingSuccessUrl = ref('')
+const existingPortalUrl = ref('')
 
 const newcomerName = ref('')
 const newcomerIdentity = ref(null)
@@ -82,6 +75,7 @@ const newcomerConfirmed = ref(false)
 const newcomerBusy = ref(false)
 const newcomerError = ref('')
 const newcomerSuccessUrl = ref('')
+const newcomerPortalUrl = ref('')
 
 onMounted(() => {
   if (!newcomerIdentity.value) generateNewcomerKeys()
@@ -123,8 +117,41 @@ const attemptStoreKeyOnDeploy = async ({ name, nsec }) => {
 const resetStatus = () => {
   existingError.value = ''
   existingSuccessUrl.value = ''
+  existingPortalUrl.value = ''
   newcomerError.value = ''
   newcomerSuccessUrl.value = ''
+  newcomerPortalUrl.value = ''
+}
+
+const mergeRelays = (relays) => {
+  return Array.from(new Set((relays || []).filter(Boolean)))
+}
+
+const fetchStorefrontAndPortalSources = async () => {
+  const rootSource = await fetchSourceManifest({
+    sourceNpub: sourceNpub.value,
+    relays: defaultRelays,
+    siteType: 'root'
+  })
+
+  const portalSource = await fetchSourceManifest({
+    sourceNpub: sourceNpub.value,
+    relays: defaultRelays,
+    siteType: 'named',
+    namedSiteKey: PORTAL_SITE_KEY
+  })
+
+  const publishRelays = mergeRelays([
+    ...defaultRelays,
+    ...rootSource.manifestRelays,
+    ...portalSource.manifestRelays
+  ])
+
+  return {
+    rootSource,
+    portalSource,
+    publishRelays
+  }
 }
 
 const runExistingFlow = async () => {
@@ -132,25 +159,27 @@ const runExistingFlow = async () => {
   existingBusy.value = true
 
   try {
-    const source = await fetchSourceManifest({
-      sourceNpub: sourceNpub.value,
-      relays: defaultRelays,
-      siteType: cloneAs.value,
-      namedSiteKey: namedSiteKey.value
-    })
-
-    const publishRelays = source.manifestRelays.length > 0 ? source.manifestRelays : defaultRelays
+    const { rootSource, portalSource, publishRelays } = await fetchStorefrontAndPortalSources()
 
     const result = await publishClonedManifestWithExtension({
-      sourceManifest: source.manifest,
-      sourcePubkey: source.sourcePubkey,
+      sourceManifest: rootSource.manifest,
+      sourcePubkey: rootSource.sourcePubkey,
       relays: publishRelays,
-      cloneAs: cloneAs.value,
-      namedSiteKey: namedSiteKey.value
+      cloneAs: 'root'
+    })
+
+    await publishClonedManifestWithExtension({
+      sourceManifest: portalSource.manifest,
+      sourcePubkey: portalSource.sourcePubkey,
+      relays: publishRelays,
+      cloneAs: 'named',
+      namedSiteKey: PORTAL_SITE_KEY
     })
 
     const siteUrl = `https://${result.npub}.nsite.cloud/`
+    const portalUrl = `https://${result.npub}.nsite.lol/${PORTAL_SITE_KEY}`
     existingSuccessUrl.value = siteUrl
+    existingPortalUrl.value = portalUrl
 
     if (process.client) {
       const opened = window.open(siteUrl, '_blank', 'noopener,noreferrer')
@@ -197,14 +226,7 @@ const runNewcomerFlow = async () => {
   newcomerBusy.value = true
 
   try {
-    const source = await fetchSourceManifest({
-      sourceNpub: sourceNpub.value,
-      relays: defaultRelays,
-      siteType: cloneAs.value,
-      namedSiteKey: namedSiteKey.value
-    })
-
-    const publishRelays = source.manifestRelays.length > 0 ? source.manifestRelays : defaultRelays
+    const { rootSource, portalSource, publishRelays } = await fetchStorefrontAndPortalSources()
 
     await publishProfile({
       identity: newcomerIdentity.value,
@@ -214,15 +236,25 @@ const runNewcomerFlow = async () => {
 
     await publishClonedManifest({
       identity: newcomerIdentity.value,
-      sourceManifest: source.manifest,
-      sourcePubkey: source.sourcePubkey,
+      sourceManifest: rootSource.manifest,
+      sourcePubkey: rootSource.sourcePubkey,
       relays: publishRelays,
-      cloneAs: cloneAs.value,
-      namedSiteKey: namedSiteKey.value
+      cloneAs: 'root'
+    })
+
+    await publishClonedManifest({
+      identity: newcomerIdentity.value,
+      sourceManifest: portalSource.manifest,
+      sourcePubkey: portalSource.sourcePubkey,
+      relays: publishRelays,
+      cloneAs: 'named',
+      namedSiteKey: PORTAL_SITE_KEY
     })
 
     const siteUrl = `https://${newcomerIdentity.value.npub}.nsite.cloud/`
+    const portalUrl = `https://${newcomerIdentity.value.npub}.nsite.lol/${PORTAL_SITE_KEY}`
     newcomerSuccessUrl.value = siteUrl
+    newcomerPortalUrl.value = portalUrl
 
     if (process.client) {
       const opened = window.open(siteUrl, '_blank', 'noopener,noreferrer')
@@ -320,8 +352,10 @@ const runNewcomerFlow = async () => {
 
       <div v-if="newcomerError" class="mt-4 rounded-xl border px-3 py-2 text-xs text-white" :style="{ borderColor: 'rgba(255,255,255,0.5)', background: '#000' }">{{ newcomerError }}</div>
       <div v-if="newcomerSuccessUrl" class="mt-4 rounded-xl border px-3 py-3 text-xs text-white" :style="{ borderColor: 'rgba(255,255,255,0.5)', background: '#000' }">
-        <p class="font-bold">Your new nsite is live.</p>
+        <p class="font-bold">Your new nsites are live.</p>
         <a class="mt-2 inline-block underline" :href="newcomerSuccessUrl" target="_blank" rel="noopener noreferrer">{{ newcomerSuccessUrl }}</a>
+        <p class="mt-3">You can visit the merchant portal via:</p>
+        <a class="mt-1 inline-block underline" :href="newcomerPortalUrl" target="_blank" rel="noopener noreferrer">{{ newcomerPortalUrl }}</a>
       </div>
     </div>
 
@@ -349,8 +383,10 @@ const runNewcomerFlow = async () => {
       </div>
 
       <div v-if="existingSuccessUrl" class="mt-4 rounded-xl border px-4 py-3 text-sm text-white" :style="{ borderColor: 'rgba(255,255,255,0.5)', background: '#000' }">
-        <p class="font-bold">Clone published with your key.</p>
+        <p class="font-bold">Clones published with your key.</p>
         <a class="mt-2 inline-block underline" :href="existingSuccessUrl" target="_blank" rel="noopener noreferrer">{{ existingSuccessUrl }}</a>
+        <p class="mt-3 text-xs">You can visit the merchant portal via:</p>
+        <a class="mt-1 inline-block text-xs underline" :href="existingPortalUrl" target="_blank" rel="noopener noreferrer">{{ existingPortalUrl }}</a>
       </div>
     </div>
   </div>

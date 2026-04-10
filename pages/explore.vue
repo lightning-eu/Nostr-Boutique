@@ -4,7 +4,7 @@ const loading = ref(true)
 const error = ref('')
 const refreshedAt = ref(0)
 
-const { fetchTemplateSites, defaultRelays, sourceNpub } = useNsiteExplore()
+const { fetchTemplateSites, defaultRelays, sourceNpubs } = useNsiteExplore()
 
 useSeoMeta({
   title: 'Explore | Nostr Boutique',
@@ -63,6 +63,7 @@ onMounted(async () => {
       </div>
 
       <p class="mt-4 text-xs" :style="{ color: 'var(--muted)' }">Relays scanned: {{ defaultRelays.join(', ') }}</p>
+      <p class="mt-1 break-all text-xs" :style="{ color: 'var(--muted)' }">Template sources: {{ sourceNpubs.join(', ') }}</p>
     </div>
   </section>
 

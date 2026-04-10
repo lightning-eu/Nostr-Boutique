@@ -2,7 +2,7 @@ import { SimplePool } from 'nostr-tools/pool'
 import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools/pure'
 import * as nip19 from 'nostr-tools/nip19'
 
-const DEFAULT_SOURCE_NPUB = 'npub1mmel3r8h7e5vmgzzxn9g3tyk0538ha3yzu7d6ljwys2mqe7s0hpstlh820'
+const DEFAULT_SOURCE_NPUB = 'npub1000000k94d2xgnfdyqkvvgmc4x2d798y67k2llk4szq7jarqhz2s540a03'
 
 const DEFAULT_RELAYS = [
   'wss://relay.ditto.pub',

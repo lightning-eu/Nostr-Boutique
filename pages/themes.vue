@@ -145,6 +145,10 @@ const cloneTheme = async (theme) => {
   <section class="fade-in-up">
     <div class="surface-card p-6 sm:p-8">
       <h1 class="text-3xl font-black sm:text-4xl">Themes</h1>
+      <p class="mt-3 max-w-4xl text-sm sm:text-base" :style="{ color: 'var(--muted)' }">
+        Source npub: <code>npub1000000k94d2xgnfdyqkvvgmc4x2d798y67k2llk4szq7jarqhz2s540a03</code>.
+        The Store Front is cloned from the root nsite, and Merchant Portal is cloned from the named nsite <code>portal</code>.
+      </p>
     </div>
   </section>
 

@@ -2,15 +2,16 @@
   {
     "id": "store-front",
     "title": "Store Front",
-    "description": "Public storefront theme focused on product browsing and checkout discovery.",
-    "npub": "npub1mmel3r8h7e5vmgzzxn9g3tyk0538ha3yzu7d6ljwys2mqe7s0hpstlh820",
+    "description": "Root shop front deployed on the root nsite for this identity.",
+    "npub": "npub1000000k94d2xgnfdyqkvvgmc4x2d798y67k2llk4szq7jarqhz2s540a03",
     "cloneAs": "root"
   },
   {
     "id": "merchant-portal",
     "title": "Merchant Portal",
-    "description": "Merchant operations theme for managing products, orders, and storefront updates.",
-    "npub": "npub1d9us5hs8lfza0eutuckpehv5zeyqpl9f2pfzgujjl7vwxqnalv9s4sng02",
-    "cloneAs": "root"
+    "description": "Named nsite for merchant operations, deployed under d=portal.",
+    "npub": "npub1000000k94d2xgnfdyqkvvgmc4x2d798y67k2llk4szq7jarqhz2s540a03",
+    "cloneAs": "named",
+    "d": "portal"
   }
 ]

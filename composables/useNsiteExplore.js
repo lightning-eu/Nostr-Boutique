@@ -1,7 +1,10 @@
 import { SimplePool } from 'nostr-tools/pool'
 import * as nip19 from 'nostr-tools/nip19'
 
-const SOURCE_NPUB = 'npub1equrmqway3qxw3dkssymusxkwgwrqypfgeqx0lx9pgjam7gnj4ysaqhkj6'
+const SOURCE_NPUBS = [
+  'npub1equrmqway3qxw3dkssymusxkwgwrqypfgeqx0lx9pgjam7gnj4ysaqhkj6',
+  'npub1000000k94d2xgnfdyqkvvgmc4x2d798y67k2llk4szq7jarqhz2s540a03'
+]
 
 const DEFAULT_RELAYS = [
   'wss://relay.ditto.pub',
@@ -72,7 +75,7 @@ const toProfileMap = async ({ pool, relays, pubkeys }) => {
 
 export const useNsiteExplore = () => {
   const pool = new SimplePool()
-  const sourcePubkey = nip19.decode(SOURCE_NPUB).data
+  const sourcePubkeys = SOURCE_NPUBS.map((npub) => nip19.decode(npub).data)
 
   const fetchTemplateSites = async (limit = 250, relays = DEFAULT_RELAYS) => {
     const events = await pool.querySync(relays, {
@@ -84,7 +87,7 @@ export const useNsiteExplore = () => {
       const tags = event.tags || []
       return tags.some((tag) => {
         if (!['muse', 'thief'].includes(tag[0])) return false
-        return tag.some((cell) => String(cell).toLowerCase() === sourcePubkey)
+        return tag.some((cell) => sourcePubkeys.includes(String(cell).toLowerCase()))
       })
     })
 
@@ -126,7 +129,7 @@ export const useNsiteExplore = () => {
   }
 
   return {
-    sourceNpub: SOURCE_NPUB,
+    sourceNpubs: SOURCE_NPUBS,
     defaultRelays: DEFAULT_RELAYS,
     fetchTemplateSites
   }
