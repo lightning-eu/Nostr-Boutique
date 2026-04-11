@@ -13,6 +13,7 @@ useSeoMeta({
 })
 
 const defaultThemeImage = 'https://raw.githubusercontent.com/S7NC/Gamma-Napp/master/public/screenshot.png'
+const sourceNpub = 'npub1000000k94d2xgnfdyqkvvgmc4x2d798y67k2llk4szq7jarqhz2s540a03'
 
 const THEME_SCREENSHOTS = {
   'store-front': [
@@ -44,6 +45,11 @@ const successByTheme = ref({})
 const selectedImageByTheme = ref({})
 
 const themeKey = (theme) => theme.id || `${theme.npub}-${theme.d || 'root'}`
+
+const shortNpub = (npub = '') => {
+  if (!npub || npub.length <= 24) return npub
+  return `${npub.slice(0, 16)}...${npub.slice(-8)}`
+}
 
 const themeScreenshots = (theme) => {
   return THEME_SCREENSHOTS[theme.id] || []
@@ -146,7 +152,8 @@ const cloneTheme = async (theme) => {
     <div class="surface-card p-6 sm:p-8">
       <h1 class="text-3xl font-black sm:text-4xl">Themes</h1>
       <p class="mt-3 max-w-4xl text-sm sm:text-base" :style="{ color: 'var(--muted)' }">
-        Source npub: <code>npub1000000k94d2xgnfdyqkvvgmc4x2d798y67k2llk4szq7jarqhz2s540a03</code>.
+        Theme source npub:
+        <code :title="sourceNpub">{{ shortNpub(sourceNpub) }}</code>.
         The Store Front is cloned from the root nsite, and Merchant Portal is cloned from the named nsite <code>portal</code>.
       </p>
     </div>
@@ -195,7 +202,13 @@ const cloneTheme = async (theme) => {
             <h2 class="mt-2 text-2xl font-black">{{ theme.title || 'Untitled theme' }}</h2>
             <p v-if="theme.description" class="mt-2 text-sm" :style="{ color: 'var(--muted)' }">{{ theme.description }}</p>
 
-            <p class="mt-3 break-all text-xs" :style="{ color: 'var(--muted)' }">{{ theme.npub }}</p>
+            <p
+              class="mt-3 max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs"
+              :style="{ color: 'var(--muted)' }"
+              :title="theme.npub"
+            >
+              {{ shortNpub(theme.npub) }}
+            </p>
 
             <p class="mt-4 text-xs font-bold uppercase tracking-[0.08em]" :style="{ color: 'var(--muted)' }">
               Visit Nsite:
