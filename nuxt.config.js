@@ -1,4 +1,8 @@
 import tailwindcss from "@tailwindcss/vite";
+
+const siteUrl = 'https://nostr.boutique'
+const metaImageUrl = `${siteUrl}/Meta-Background.png`
+
 export default defineNuxtConfig({
   title: "Nostr Boutique",
 
@@ -20,17 +24,19 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Launch a sovereign Nostr storefront with reusable Nsite themes, gateway discovery, and simple clone flows.' },
         { name: 'theme-color', content: '#f3efe6' },
         { property: 'og:type', content: 'website' },
+        { property: 'og:url', content: siteUrl },
         { property: 'og:site_name', content: 'Nostr Boutique' },
         { property: 'og:title', content: 'Nostr Boutique' },
         { property: 'og:description', content: 'Launch a sovereign Nostr storefront with reusable Nsite themes, gateway discovery, and simple clone flows.' },
-        { property: 'og:image', content: '/Meta-Background.png' },
+        { property: 'og:image', content: metaImageUrl },
         { property: 'og:image:alt', content: 'Nostr Boutique storefront preview' },
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: 'Nostr Boutique' },
         { name: 'twitter:description', content: 'Launch a sovereign Nostr storefront with reusable Nsite themes, gateway discovery, and simple clone flows.' },
-        { name: 'twitter:image', content: '/Meta-Background.png' }
+        { name: 'twitter:image', content: metaImageUrl }
       ],
       link: [
+        { rel: 'canonical', href: siteUrl },
         { rel: 'icon', type: 'image/png', href: '/Logo.png' }
       ],
       script: [
