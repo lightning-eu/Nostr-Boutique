@@ -86,7 +86,6 @@ export const useNsiteExplore = () => {
   const sourceByPubkey = new Map(
     SOURCE_TEMPLATES.map((item) => [nip19.decode(item.npub).data, item])
   )
-  const sourcePubkeys = Array.from(sourceByPubkey.keys())
 
   const sourceMatchForEvent = (event) => {
     const tags = event.tags || []
@@ -100,7 +99,7 @@ export const useNsiteExplore = () => {
     return null
   }
 
-  const fetchTemplateSites = async (limit = 250, relays = DEFAULT_RELAYS) => {
+  const fetchTemplateSites = async (limit = 1000, relays = DEFAULT_RELAYS) => {
     const events = await pool.querySync(relays, {
       kinds: [15128, 35128],
       limit
@@ -145,7 +144,9 @@ export const useNsiteExplore = () => {
           nsiteRunUrl: `https://${npub}.nsite.run`,
           nsiteLolUrl: `https://${npub}.nsite.lol`,
           nsiteBoutiqueUrl: `https://${npub}.nsite.boutique`,
-          nostoReUrl: `https://${npub}.nosto.re`
+          nostoReUrl: `https://${npub}.nosto.re`,
+          sovBizUrl: `https://${npub}.sov.biz`,
+          sovPubUrl: `https://${npub}.sov.pub`
         }
       })
   }

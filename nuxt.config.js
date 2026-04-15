@@ -17,7 +17,21 @@ export default defineNuxtConfig({
     head: {
       title: "Nostr Boutique",
       meta: [
-        { name: 'description', content: 'Nostr Boutique landing site for sovereign Gamma-style storefronts and Nsite onboarding.' }
+        { name: 'description', content: 'Launch a sovereign Nostr storefront with reusable Nsite themes, gateway discovery, and simple clone flows.' },
+        { name: 'theme-color', content: '#f3efe6' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:site_name', content: 'Nostr Boutique' },
+        { property: 'og:title', content: 'Nostr Boutique' },
+        { property: 'og:description', content: 'Launch a sovereign Nostr storefront with reusable Nsite themes, gateway discovery, and simple clone flows.' },
+        { property: 'og:image', content: '/Meta-Background.png' },
+        { property: 'og:image:alt', content: 'Nostr Boutique storefront preview' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'Nostr Boutique' },
+        { name: 'twitter:description', content: 'Launch a sovereign Nostr storefront with reusable Nsite themes, gateway discovery, and simple clone flows.' },
+        { name: 'twitter:image', content: '/Meta-Background.png' }
+      ],
+      link: [
+        { rel: 'icon', type: 'image/png', href: '/Logo.png' }
       ],
       script: [
         {

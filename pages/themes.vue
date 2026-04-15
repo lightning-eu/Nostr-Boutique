@@ -75,7 +75,9 @@ const toGatewayUrls = (theme) => {
     run: `https://${npub}.nsite.run/`,
     lol: `https://${npub}.nsite.lol/`,
     boutique: `https://${npub}.nsite.boutique/`,
-    nostoRe: `https://${npub}.nosto.re/`
+    nostoRe: `https://${npub}.nosto.re/`,
+    sovBiz: `https://${npub}.sov.biz/`,
+    sovPub: `https://${npub}.sov.pub/`
   }
 }
 
@@ -271,6 +273,28 @@ const cloneTheme = async (theme) => {
                 title="Open template via nosto.re"
               >
                 🍌
+              </a>
+              <a
+                :href="toGatewayUrls(theme).sovBiz"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-full border text-lg"
+                :style="{ borderColor: 'var(--line)' }"
+                aria-label="Open template via sov.biz"
+                title="Open template via sov.biz"
+              >
+                🏴‍☠️
+              </a>
+              <a
+                :href="toGatewayUrls(theme).sovPub"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-full border text-lg"
+                :style="{ borderColor: 'var(--line)' }"
+                aria-label="Open template via sov.pub"
+                title="Open template via sov.pub"
+              >
+                🍻
               </a>
             </div>
 

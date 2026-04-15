@@ -68,7 +68,17 @@ onMounted(async () => {
   </section>
 
   <section class="mt-6">
-    <p v-if="loading" class="text-sm" :style="{ color: 'var(--muted)' }">Scanning relays for related Nsites...</p>
+    <div v-if="loading" class="surface-card flex flex-col items-center gap-4 px-6 py-8 text-center">
+      <img
+        src="/nostr-ostrich-running.gif"
+        alt="Running ostrich while relay scan loads"
+        class="h-28 w-auto sm:h-32"
+      >
+      <div class="space-y-1">
+        <p class="text-sm font-black">Scanning relays for related Nsites...</p>
+        <p class="text-xs" :style="{ color: 'var(--muted)' }">Checking clone lineage through muse and thief tags.</p>
+      </div>
+    </div>
     <p v-else-if="error" class="rounded-xl border border-red-300 bg-red-500/10 px-4 py-3 text-sm text-red-300">{{ error }}</p>
     <p v-else-if="sites.length === 0" class="text-sm" :style="{ color: 'var(--muted)' }">
       No related Nsites found right now. Discovery is best-effort and improves as more manifests propagate.
@@ -171,6 +181,28 @@ onMounted(async () => {
             title="Open via nosto.re"
           >
             🍌
+          </a>
+          <a
+            :href="site.sovBizUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-full border text-base"
+            :style="{ borderColor: 'var(--line)' }"
+            aria-label="Open via sov.biz"
+            title="Open via sov.biz"
+          >
+            🏴‍☠️
+          </a>
+          <a
+            :href="site.sovPubUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-full border text-base"
+            :style="{ borderColor: 'var(--line)' }"
+            aria-label="Open via sov.pub"
+            title="Open via sov.pub"
+          >
+            🍻
           </a>
         </div>
       </article>
