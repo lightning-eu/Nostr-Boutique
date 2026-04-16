@@ -18,19 +18,15 @@ const sourceNpub = 'npub1000000k94d2xgnfdyqkvvgmc4x2d798y67k2llk4szq7jarqhz2s540
 const THEME_SCREENSHOTS = {
   'store-front': [
     '/store-front/1.png',
+    '/store-front/2.png',
     '/store-front/3.png',
-    '/store-front/4.png',
-    '/store-front/5.png',
-    '/store-front/6.png'
+    '/store-front/4.png'
   ],
   'merchant-portal': [
     '/merchant-portal/1.png',
     '/merchant-portal/2.png',
     '/merchant-portal/3.png',
-    '/merchant-portal/4.png',
-    '/merchant-portal/5.png',
-    '/merchant-portal/6.png',
-    '/merchant-portal/7.png'
+    '/merchant-portal/4.png'
   ]
 }
 
@@ -43,6 +39,8 @@ const busyByTheme = ref({})
 const errorByTheme = ref({})
 const successByTheme = ref({})
 const selectedImageByTheme = ref({})
+const previewImage = ref('')
+const previewTitle = ref('')
 
 const themeKey = (theme) => theme.id || `${theme.npub}-${theme.d || 'root'}`
 
@@ -67,6 +65,39 @@ const setActiveThemeImage = (theme, image) => {
     [key]: image
   }
 }
+
+const openPreview = (theme, image) => {
+  previewImage.value = image
+  previewTitle.value = theme.title || 'Theme preview'
+
+  if (process.client) {
+    document.body.style.overflow = 'hidden'
+  }
+}
+
+const closePreview = () => {
+  previewImage.value = ''
+  previewTitle.value = ''
+
+  if (process.client) {
+    document.body.style.overflow = ''
+  }
+}
+
+const handlePreviewKeydown = (event) => {
+  if (event.key === 'Escape' && previewImage.value) {
+    closePreview()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handlePreviewKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handlePreviewKeydown)
+  document.body.style.overflow = ''
+})
 
 const toGatewayUrls = (theme) => {
   const npub = theme.npub
@@ -172,13 +203,20 @@ const cloneTheme = async (theme) => {
       <article v-for="theme in themes" :key="themeKey(theme)" class="surface-card p-4 sm:p-5">
         <div class="grid gap-4 md:grid-cols-[1.35fr_1fr] md:items-start">
           <div>
-            <img
-              :src="activeThemeImage(theme)"
-              :alt="`${theme.title || 'Theme'} preview`"
-              class="mb-3 h-64 w-full rounded-xl border object-cover sm:h-72"
+            <button
+              type="button"
+              class="mb-3 block w-full overflow-hidden rounded-xl border text-left transition hover:opacity-95"
               :style="{ borderColor: 'var(--line)' }"
-              loading="lazy"
+              :aria-label="`Open large preview for ${theme.title || 'theme'}`"
+              @click="openPreview(theme, activeThemeImage(theme))"
             >
+              <img
+                :src="activeThemeImage(theme)"
+                :alt="`${theme.title || 'Theme'} preview`"
+                class="h-72 w-full object-cover sm:h-80"
+                loading="lazy"
+              >
+            </button>
 
             <div v-if="themeScreenshots(theme).length > 1" class="grid grid-cols-5 gap-2 sm:grid-cols-6">
               <button
@@ -327,4 +365,30 @@ const cloneTheme = async (theme) => {
       </article>
     </div>
   </section>
+
+  <Teleport to="body">
+    <div
+      v-if="previewImage"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 sm:p-6"
+      @click="closePreview"
+    >
+      <div class="relative w-full max-w-6xl" @click.stop>
+        <button
+          type="button"
+          class="absolute right-3 top-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border text-xl font-bold backdrop-blur"
+          :style="{ borderColor: 'rgba(255,255,255,0.35)', background: 'rgba(15,23,42,0.65)', color: '#fff' }"
+          aria-label="Close preview"
+          @click="closePreview"
+        >
+          x
+        </button>
+
+        <img
+          :src="previewImage"
+          :alt="previewTitle"
+          class="max-h-[85vh] w-full rounded-2xl object-contain shadow-2xl"
+        >
+      </div>
+    </div>
+  </Teleport>
 </template>

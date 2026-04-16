@@ -3,8 +3,19 @@ const sites = ref([])
 const loading = ref(true)
 const error = ref('')
 const refreshedAt = ref(0)
+const displayMode = ref('filtered')
 
 const { fetchTemplateSites, defaultRelays, sourceNpubs } = useNsiteExplore()
+
+const imageBackedSites = computed(() => {
+  return sites.value.filter((site) => typeof site.profileImage === 'string' && site.profileImage.trim() !== '')
+})
+
+const totalClonedBoutiques = computed(() => sites.value.length)
+
+const displayedSites = computed(() => {
+  return displayMode.value === 'all' ? sites.value : imageBackedSites.value
+})
 
 useSeoMeta({
   title: 'Explore | Nostr Boutique',
@@ -25,6 +36,7 @@ const refreshSites = async () => {
     loading.value = true
     error.value = ''
     sites.value = await fetchTemplateSites()
+    displayMode.value = 'filtered'
     refreshedAt.value = Math.floor(Date.now() / 1000)
   } catch (err) {
     error.value = err.message || 'Could not load Nsite discovery right now.'
@@ -49,7 +61,7 @@ onMounted(async () => {
 <template>
   <section class="fade-in-up">
     <div class="surface-card p-6 sm:p-8">
-      <h1 class="hero-title mt-4 text-4xl font-black leading-tight">Explore Nsites using this template path.</h1>
+      <h1 class="hero-title mt-4 text-4xl font-black leading-tight">Explore already live boutiques</h1>
 
       <div class="mt-5 flex flex-wrap items-center gap-2">
         <button
@@ -64,6 +76,32 @@ onMounted(async () => {
 
       <p class="mt-4 text-xs" :style="{ color: 'var(--muted)' }">Relays scanned: {{ defaultRelays.join(', ') }}</p>
       <p class="mt-1 break-all text-xs" :style="{ color: 'var(--muted)' }">Template sources: {{ sourceNpubs.join(', ') }}</p>
+
+      <div v-if="!loading && !error" class="mt-6 grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          class="rounded-2xl border px-5 py-4 text-left transition"
+          :style="displayMode === 'filtered'
+            ? { borderColor: '#10b981', background: 'rgba(16,185,129,0.14)' }
+            : { borderColor: 'var(--line)', background: 'rgba(16,185,129,0.08)' }"
+          @click="displayMode = 'filtered'"
+        >
+          <p class="text-xs font-bold uppercase tracking-[0.08em]" :style="{ color: 'var(--muted)' }">Filtered list</p>
+          <p class="mt-2 text-3xl font-black">{{ imageBackedSites.length }}</p>
+        </button>
+
+        <button
+          type="button"
+          class="rounded-2xl border px-5 py-4 text-left transition"
+          :style="displayMode === 'all'
+            ? { borderColor: '#3b82f6', background: 'rgba(59,130,246,0.14)' }
+            : { borderColor: 'var(--line)', background: 'rgba(59,130,246,0.08)' }"
+          @click="displayMode = 'all'"
+        >
+          <p class="text-xs font-bold uppercase tracking-[0.08em]" :style="{ color: 'var(--muted)' }">Global amount</p>
+          <p class="mt-2 text-3xl font-black">{{ totalClonedBoutiques }}</p>
+        </button>
+      </div>
     </div>
   </section>
 
@@ -80,12 +118,15 @@ onMounted(async () => {
       </div>
     </div>
     <p v-else-if="error" class="rounded-xl border border-red-300 bg-red-500/10 px-4 py-3 text-sm text-red-300">{{ error }}</p>
-    <p v-else-if="sites.length === 0" class="text-sm" :style="{ color: 'var(--muted)' }">
+    <p v-else-if="totalClonedBoutiques === 0" class="text-sm" :style="{ color: 'var(--muted)' }">
       No related Nsites found right now. Discovery is best-effort and improves as more manifests propagate.
+    </p>
+    <p v-else-if="displayMode === 'filtered' && imageBackedSites.length === 0" class="text-sm" :style="{ color: 'var(--muted)' }">
+      Cloned boutiques were found, but none of them currently have a profile image set.
     </p>
 
     <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <article v-for="site in sites" :key="site.id" class="surface-card p-5 fade-in-up">
+      <article v-for="site in displayedSites" :key="site.id" class="surface-card p-5 fade-in-up">
         <div class="mb-3 flex items-center gap-3">
           <img
             v-if="site.profileImage"
