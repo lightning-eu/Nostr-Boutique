@@ -12,6 +12,15 @@ export default defineNuxtConfig({
     vue: {
       customElement: true
     },
+    optimizeDeps: {
+      include: [
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        'nostr-tools/pool',
+        'nostr-tools/pure',
+        'nostr-tools/nip19'
+      ]
+    },
     plugins: [
       tailwindcss()
     ]
@@ -49,6 +58,10 @@ export default defineNuxtConfig({
   },
 
   devtools: { enabled: true },
+
+  build: {
+    transpile: ['vue3-odometer']
+  },
 
   css: ['~/assets/tailwind.css'],
 

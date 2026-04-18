@@ -36,6 +36,11 @@ const toSiteKey = (event) => {
   return `${event.pubkey}:${dTag?.[1] || 'root'}`
 }
 
+const toTagValue = (event, name) => {
+  const tag = (event.tags || []).find((item) => item[0] === name)
+  return tag?.[1] || ''
+}
+
 const shortNpub = (npub) => {
   return `${npub.slice(0, 12)}...${npub.slice(-6)}`
 }
@@ -81,6 +86,26 @@ const toProfileMap = async ({ pool, relays, pubkeys }) => {
   return profileMap
 }
 
+const fetchProductCountForPubkey = async ({ pool, relays, pubkey }) => {
+  const events = await pool.querySync(relays, {
+    kinds: [30402],
+    authors: [pubkey],
+    limit: 300
+  })
+
+  const latestByDTag = new Map()
+
+  for (const event of events) {
+    const dTag = toTagValue(event, 'd')
+    if (!dTag) continue
+
+    const previous = latestByDTag.get(dTag)
+    if (!previous || event.created_at > previous.created_at) latestByDTag.set(dTag, event)
+  }
+
+  return latestByDTag.size
+}
+
 export const useNsiteExplore = () => {
   const pool = new SimplePool()
   const sourceByPubkey = new Map(
@@ -99,7 +124,17 @@ export const useNsiteExplore = () => {
     return null
   }
 
-  const fetchTemplateSites = async (limit = 1000, relays = DEFAULT_RELAYS) => {
+  const fetchTemplateSites = async (options = {}) => {
+    const normalized = typeof options === 'number'
+      ? { limit: options, relays: DEFAULT_RELAYS, onProgress: null }
+      : {
+          limit: options.limit || 1000,
+          relays: options.relays || DEFAULT_RELAYS,
+          onProgress: typeof options.onProgress === 'function' ? options.onProgress : null
+        }
+
+    const { limit, relays, onProgress } = normalized
+
     const events = await pool.querySync(relays, {
       kinds: [15128, 35128],
       limit
@@ -124,12 +159,14 @@ export const useNsiteExplore = () => {
       pubkeys: uniquePubkeys
     })
 
-    return dedupedEvents
-      .sort((a, b) => b.created_at - a.created_at)
-      .map((event) => {
+    const sortedEvents = dedupedEvents.sort((a, b) => b.created_at - a.created_at)
+    const collectedSites = []
+    let totalProducts = 0
+
+    for (const event of sortedEvents) {
         const npub = nip19.npubEncode(event.pubkey)
         const profile = profileMap.get(event.pubkey) || {}
-        return {
+        const site = {
           id: event.id,
           pubkey: event.pubkey,
           npub,
@@ -138,6 +175,7 @@ export const useNsiteExplore = () => {
           title: toSiteTitle(event),
           profileName: toProfileName(profile, npub),
           profileImage: profile.picture || '',
+          productCount: 0,
           kind: event.kind,
           createdAt: event.created_at,
           nsiteCloudUrl: `https://${npub}.nsite.cloud`,
@@ -148,7 +186,38 @@ export const useNsiteExplore = () => {
           sovBizUrl: `https://${npub}.sov.biz`,
           sovPubUrl: `https://${npub}.sov.pub`
         }
-      })
+
+        collectedSites.push(site)
+
+        if (onProgress) {
+          onProgress({
+            sites: [...collectedSites],
+            totalSites: sortedEvents.length,
+            totalProducts,
+            phase: 'sites'
+          })
+        }
+
+        const productCount = await fetchProductCountForPubkey({
+          pool,
+          relays,
+          pubkey: event.pubkey
+        })
+
+        site.productCount = productCount
+        totalProducts += productCount
+
+        if (onProgress) {
+          onProgress({
+            sites: [...collectedSites],
+            totalSites: sortedEvents.length,
+            totalProducts,
+            phase: 'products'
+          })
+        }
+    }
+
+    return collectedSites
   }
 
   return {

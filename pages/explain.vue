@@ -114,4 +114,28 @@ useSeoMeta({
       </NuxtLink>
     </article>
   </section>
+
+  <section class="mt-6">
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+      <article class="rounded-2xl border px-4 py-4 text-center" :style="{ borderColor: 'var(--line)', background: 'var(--bg-soft)' }">
+        <p class="text-2xl">💳</p>
+        <p class="mt-2 text-sm font-bold leading-6">No credit card or monthly fees!</p>
+      </article>
+
+      <article class="rounded-2xl border px-4 py-4 text-center" :style="{ borderColor: 'var(--line)', background: 'var(--bg-soft)' }">
+        <p class="text-2xl">📵</p>
+        <p class="mt-2 text-sm font-bold leading-6">No email address or phone number!</p>
+      </article>
+
+      <article class="rounded-2xl border px-4 py-4 text-center" :style="{ borderColor: 'var(--line)', background: 'var(--bg-soft)' }">
+        <p class="text-2xl">⚡</p>
+        <p class="mt-2 text-sm font-bold leading-6">As close to one-click deploy as possible.</p>
+      </article>
+
+      <article class="rounded-2xl border px-4 py-4 text-center" :style="{ borderColor: 'var(--line)', background: 'var(--bg-soft)' }">
+        <p class="text-2xl">🛠️</p>
+        <p class="mt-2 text-sm font-bold leading-6">No technical skills required.</p>
+      </article>
+    </div>
+  </section>
 </template>

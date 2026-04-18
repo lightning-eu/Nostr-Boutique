@@ -18,9 +18,25 @@ const sourceNpub = 'npub1000000k94d2xgnfdyqkvvgmc4x2d798y67k2llk4szq7jarqhz2s540
 const THEME_SCREENSHOTS = {
   'store-front': [
     '/store-front/1.png',
-    '/store-front/2.png',
     '/store-front/3.png',
-    '/store-front/4.png'
+    '/store-front/4.png',
+    '/store-front/6.png',
+    '/store-front/8.png',
+    '/store-front/9.png',
+    '/store-front/10.png',
+    '/store-front/11.png',
+    '/store-front/12.png'
+  ],
+  'fiat-store-front': [
+    '/fiat-front/1.png',
+    '/fiat-front/2.png',
+    '/fiat-front/3.png',
+    '/fiat-front/4.png',
+    '/fiat-front/6.png',
+    '/fiat-front/8.png',
+    '/fiat-front/9.png',
+    '/fiat-front/10.png',
+    '/fiat-front/12.png'
   ],
   'merchant-portal': [
     '/merchant-portal/1.png',
@@ -64,6 +80,17 @@ const setActiveThemeImage = (theme, image) => {
     ...selectedImageByTheme.value,
     [key]: image
   }
+}
+
+const cycleThemeImage = (theme, direction = 1) => {
+  const shots = themeScreenshots(theme)
+  if (shots.length <= 1) return
+
+  const current = activeThemeImage(theme)
+  const currentIndex = shots.indexOf(current)
+  const safeIndex = currentIndex >= 0 ? currentIndex : 0
+  const nextIndex = (safeIndex + direction + shots.length) % shots.length
+  setActiveThemeImage(theme, shots[nextIndex])
 }
 
 const openPreview = (theme, image) => {
@@ -147,11 +174,16 @@ const cloneTheme = async (theme) => {
   const pendingWindow = window.open('', '_blank')
 
   try {
+    const sourceAs = theme.sourceAs || theme.cloneAs || 'root'
+    const sourceD = theme.sourceD || theme.d || ''
+    const deployAs = theme.cloneAs || 'root'
+    const deployD = theme.d || ''
+
     const source = await fetchSourceManifest({
       sourceNpub: theme.npub,
       relays: defaultRelays,
-      siteType: theme.cloneAs === 'named' ? 'named' : 'root',
-      namedSiteKey: theme.cloneAs === 'named' ? (theme.d || '') : ''
+      siteType: sourceAs === 'named' ? 'named' : 'root',
+      namedSiteKey: sourceAs === 'named' ? sourceD : ''
     })
 
     const publishRelays = source.manifestRelays.length > 0 ? source.manifestRelays : defaultRelays
@@ -160,8 +192,8 @@ const cloneTheme = async (theme) => {
       sourceManifest: source.manifest,
       sourcePubkey: source.sourcePubkey,
       relays: publishRelays,
-      cloneAs: theme.cloneAs === 'named' ? 'named' : 'root',
-      namedSiteKey: theme.cloneAs === 'named' ? (theme.d || '') : ''
+      cloneAs: deployAs === 'named' ? 'named' : 'root',
+      namedSiteKey: deployAs === 'named' ? deployD : ''
     })
 
     const url = `https://${result.npub}.nsite.cloud/`
@@ -180,6 +212,18 @@ const cloneTheme = async (theme) => {
     setBusy(key, false)
   }
 }
+
+const cloneModeLabel = (theme) => {
+  const sourceAs = theme.sourceAs || theme.cloneAs || 'root'
+  const deployAs = theme.cloneAs || 'root'
+
+  if (sourceAs === deployAs) return deployAs === 'named' ? 'Named clone' : 'Root clone'
+  return `${sourceAs === 'named' ? 'Named source' : 'Root source'} -> ${deployAs === 'named' ? 'Named deploy' : 'Root deploy'}`
+}
+
+const themeFamilyLabel = (theme) => {
+  return theme.id === 'merchant-portal' ? 'Merchant Portal' : 'Store Front'
+}
 </script>
 
 <template>
@@ -187,9 +231,12 @@ const cloneTheme = async (theme) => {
     <div class="surface-card p-6 sm:p-8">
       <h1 class="text-3xl font-black sm:text-4xl">Themes</h1>
       <p class="mt-3 max-w-4xl text-sm sm:text-base" :style="{ color: 'var(--muted)' }">
-        Theme source npub:
-        <code :title="sourceNpub">{{ shortNpub(sourceNpub) }}</code>.
-        The Store Front is cloned from the root nsite, and Merchant Portal is cloned from the named nsite <code>portal</code>.
+        They are not really themes, but that is the closest analogy to something you probably already know. This is more of a storefront and merchant portal setup.
+        You can deploy a storefront and manage it with any other Nostr-compatible client. You can also deploy the merchant portal, but that part is optional because of Nostr interoperability.
+        For storefronts, you have two options: a Bitcoin-maxi Store Front, or a Store Front with a simple PayPal integration. By default, PayPal checkout adds 10% to the end total.
+      </p>
+      <p class="mt-2 text-xs" :style="{ color: 'var(--muted)' }">
+        <strong>Publisher:</strong> <code :title="sourceNpub">{{ shortNpub(sourceNpub) }}</code>
       </p>
     </div>
   </section>
@@ -203,27 +250,51 @@ const cloneTheme = async (theme) => {
       <article v-for="theme in themes" :key="themeKey(theme)" class="surface-card p-4 sm:p-5">
         <div class="grid gap-4 md:grid-cols-[1.35fr_1fr] md:items-start">
           <div>
-            <button
-              type="button"
-              class="mb-3 block w-full overflow-hidden rounded-xl border text-left transition hover:opacity-95"
-              :style="{ borderColor: 'var(--line)' }"
-              :aria-label="`Open large preview for ${theme.title || 'theme'}`"
-              @click="openPreview(theme, activeThemeImage(theme))"
-            >
-              <img
-                :src="activeThemeImage(theme)"
-                :alt="`${theme.title || 'Theme'} preview`"
-                class="h-72 w-full object-cover sm:h-80"
-                loading="lazy"
+            <div class="relative mb-3">
+              <button
+                type="button"
+                class="block w-full overflow-hidden border text-left transition hover:opacity-95"
+                :style="{ borderColor: 'var(--line)' }"
+                :aria-label="`Open large preview for ${theme.title || 'theme'}`"
+                @click="openPreview(theme, activeThemeImage(theme))"
               >
-            </button>
+                <img
+                  :src="activeThemeImage(theme)"
+                  :alt="`${theme.title || 'Theme'} preview`"
+                  class="h-72 w-full object-cover sm:h-80"
+                  loading="lazy"
+                >
+              </button>
+
+              <button
+                v-if="themeScreenshots(theme).length > 1"
+                type="button"
+                class="absolute left-2 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center border text-xl font-bold backdrop-blur"
+                :style="{ borderColor: 'var(--line)', background: 'rgba(15,23,42,0.6)', color: '#fff' }"
+                :aria-label="`Previous ${theme.title || 'theme'} image`"
+                @click="cycleThemeImage(theme, -1)"
+              >
+                ‹
+              </button>
+
+              <button
+                v-if="themeScreenshots(theme).length > 1"
+                type="button"
+                class="absolute right-2 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center border text-xl font-bold backdrop-blur"
+                :style="{ borderColor: 'var(--line)', background: 'rgba(15,23,42,0.6)', color: '#fff' }"
+                :aria-label="`Next ${theme.title || 'theme'} image`"
+                @click="cycleThemeImage(theme, 1)"
+              >
+                ›
+              </button>
+            </div>
 
             <div v-if="themeScreenshots(theme).length > 1" class="grid grid-cols-5 gap-2 sm:grid-cols-6">
               <button
                 v-for="shot in themeScreenshots(theme)"
                 :key="`${themeKey(theme)}-${shot}`"
                 type="button"
-                class="overflow-hidden rounded-lg border"
+                class="overflow-hidden border"
                 :style="activeThemeImage(theme) === shot ? { borderColor: '#8b5cf6' } : { borderColor: 'var(--line)' }"
                 @click="setActiveThemeImage(theme, shot)"
               >
@@ -239,7 +310,7 @@ const cloneTheme = async (theme) => {
 
           <div>
             <p class="text-xs font-bold uppercase tracking-[0.08em]" :style="{ color: 'var(--muted)' }">
-              {{ theme.cloneAs === 'named' ? 'Named clone' : 'Root clone' }}
+              {{ themeFamilyLabel(theme) }}
             </p>
             <h2 class="mt-2 text-2xl font-black">{{ theme.title || 'Untitled theme' }}</h2>
             <p v-if="theme.description" class="mt-2 text-sm" :style="{ color: 'var(--muted)' }">{{ theme.description }}</p>
@@ -249,7 +320,10 @@ const cloneTheme = async (theme) => {
               :style="{ color: 'var(--muted)' }"
               :title="theme.npub"
             >
-              {{ shortNpub(theme.npub) }}
+              <strong>Publisher:</strong> {{ shortNpub(theme.npub) }}
+            </p>
+            <p class="mt-1 text-xs" :style="{ color: 'var(--muted)' }">
+              <strong>Publishing:</strong> {{ cloneModeLabel(theme) }}
             </p>
 
             <p class="mt-4 text-xs font-bold uppercase tracking-[0.08em]" :style="{ color: 'var(--muted)' }">
@@ -343,7 +417,7 @@ const cloneTheme = async (theme) => {
               :disabled="busyByTheme[themeKey(theme)]"
               @click="cloneTheme(theme)"
             >
-              {{ busyByTheme[themeKey(theme)] ? 'Cloning...' : 'Clone this theme' }}
+              {{ busyByTheme[themeKey(theme)] ? 'Cloning...' : 'Clone this Nsite' }}
             </button>
 
             <p v-if="errorByTheme[themeKey(theme)]" class="mt-3 text-xs text-red-500">{{ errorByTheme[themeKey(theme)] }}</p>
@@ -386,7 +460,7 @@ const cloneTheme = async (theme) => {
         <img
           :src="previewImage"
           :alt="previewTitle"
-          class="max-h-[85vh] w-full rounded-2xl object-contain shadow-2xl"
+          class="max-h-[85vh] w-full object-contain shadow-2xl"
         >
       </div>
     </div>

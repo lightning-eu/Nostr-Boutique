@@ -19,7 +19,9 @@
     "marked": "^17.0.4",
     "nostr-tools": "^2.23.3",
     "nuxt": "^4.2.1",
+    "odometer": "^0.4.8",
     "shaders": "^2.3.75",
-    "vite": "^8.0.2"
+    "vite": "^8.0.2",
+    "vue3-odometer": "^0.1.3"
   }
 }

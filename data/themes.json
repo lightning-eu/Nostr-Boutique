@@ -1,15 +1,24 @@
 [
   {
     "id": "store-front",
-    "title": "Store Front",
-    "description": "Root shop front deployed on the root nsite for this identity.",
+    "title": "Bitcoin Template",
+    "description": "Bitcoin-only storefront template with a sats-first checkout flow.",
     "npub": "npub1000000k94d2xgnfdyqkvvgmc4x2d798y67k2llk4szq7jarqhz2s540a03",
     "cloneAs": "root"
   },
   {
+    "id": "fiat-store-front",
+    "title": "Fiat Template",
+    "description": "Storefront template with simple PayPal checkout. PayPal checkout adds 10% to the end total by default.",
+    "npub": "npub1000000k94d2xgnfdyqkvvgmc4x2d798y67k2llk4szq7jarqhz2s540a03",
+    "sourceAs": "named",
+    "sourceD": "fiat-template",
+    "cloneAs": "root"
+  },
+  {
     "id": "merchant-portal",
-    "title": "Merchant Portal",
-    "description": "Named nsite for merchant operations, deployed under d=portal.",
+    "title": "Merchant Portal Template",
+    "description": "Optional merchant portal template for product and order operations.",
     "npub": "npub1000000k94d2xgnfdyqkvvgmc4x2d798y67k2llk4szq7jarqhz2s540a03",
     "cloneAs": "named",
     "d": "portal"

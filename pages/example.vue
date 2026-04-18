@@ -1,10 +1,11 @@
 <script setup>
-const exampleCloudUrl = 'https://npub1equrmqway3qxw3dkssymusxkwgwrqypfgeqx0lx9pgjam7gnj4ysaqhkj6.nsite.cloud/'
-const exampleRunUrl = 'https://npub1equrmqway3qxw3dkssymusxkwgwrqypfgeqx0lx9pgjam7gnj4ysaqhkj6.nsite.run/'
-const exampleLolUrl = 'https://npub1equrmqway3qxw3dkssymusxkwgwrqypfgeqx0lx9pgjam7gnj4ysaqhkj6.nsite.lol/'
-const exampleBoutiqueUrl = 'https://npub1equrmqway3qxw3dkssymusxkwgwrqypfgeqx0lx9pgjam7gnj4ysaqhkj6.nsite.boutique/'
+const exampleNpub = 'npub1cwhy4k8qd2guyqz8t45u4yzyp4k4fhnjn573ukh6e77mde2dgm9s2lujc5'
+const exampleCloudUrl = `https://${exampleNpub}.nsite.cloud/`
+const exampleRunUrl = `https://${exampleNpub}.nsite.run/`
+const exampleLolUrl = `https://${exampleNpub}.nsite.lol/`
+const exampleBoutiqueUrl = `https://${exampleNpub}.nsite.boutique/`
 const examplePortalCloudUrl = 'https://npub1jegt4wpzxlwzy6p35767vjk5qxqw7udw0zl2z9frz4tku67qwfrsf2altc.nsite.cloud/'
-const examplePreviewUrl = 'https://npub1cwhy4k8qd2guyqz8t45u4yzyp4k4fhnjn573ukh6e77mde2dgm9s2lujc5.nsite.run/'
+const examplePreviewUrl = exampleCloudUrl
 
 const previewUrl = ref(examplePreviewUrl)
 const frameScale = 0.92
@@ -19,10 +20,9 @@ useSeoMeta({
   <section class="fade-in-up space-y-4">
     <article class="surface-card p-6 sm:p-8">
       <span class="pill">Reference deployment</span>
-      <h1 class="hero-title mt-4 text-4xl font-black leading-tight">See a live Gamma-style Nsite.</h1>
+      <h1 class="hero-title mt-4 text-4xl font-black leading-tight">See a real boutique storefront live.</h1>
       <p class="mt-4 text-sm sm:text-base" :style="{ color: 'var(--muted)' }">
-        This example is the public storefront used as a proof point for this landing site.
-        You can open it directly and inspect how a Nostr-hosted merchant surface behaves.
+        You can see this real boutique in action. This Nostr storefront loads your decentralized products and merchant identity directly from relays.
       </p>
 
       <div class="mt-6 flex flex-wrap gap-3">
@@ -68,7 +68,7 @@ useSeoMeta({
           class="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-bold"
           :style="{ borderColor: 'var(--line)' }"
         >
-          Open via nsite.boutique 🛍️
+          Open via nsite.boutique
         </a>
         <NuxtLink to="/explore" class="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-bold" :style="{ borderColor: 'var(--line)' }">
           Explore related Nsites
@@ -104,7 +104,7 @@ useSeoMeta({
     </article>
     <article class="panel">
       <h2 class="text-base font-black">Works on gateways</h2>
-      <p class="mt-2 text-sm" :style="{ color: 'var(--muted)' }">Accessed through gateway infrastructure so regular browsers can render it via nsite.cloud, nsite.run, nsite.lol, and nsite.boutique 🛍️.</p>
+      <p class="mt-2 text-sm" :style="{ color: 'var(--muted)' }">Accessed through gateway infrastructure so regular browsers can render it via nsite.cloud, nsite.run, nsite.lol, and nsite.boutique.</p>
     </article>
     <article class="panel">
       <h2 class="text-base font-black">Template reference</h2>

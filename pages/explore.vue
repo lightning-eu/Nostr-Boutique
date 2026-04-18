@@ -4,6 +4,7 @@ const loading = ref(true)
 const error = ref('')
 const refreshedAt = ref(0)
 const displayMode = ref('filtered')
+const productsLoaded = ref(0)
 
 const { fetchTemplateSites, defaultRelays, sourceNpubs } = useNsiteExplore()
 
@@ -12,6 +13,9 @@ const imageBackedSites = computed(() => {
 })
 
 const totalClonedBoutiques = computed(() => sites.value.length)
+const productsListed = computed(() => {
+  return imageBackedSites.value.reduce((total, site) => total + (site.productCount || 0), 0)
+})
 
 const displayedSites = computed(() => {
   return displayMode.value === 'all' ? sites.value : imageBackedSites.value
@@ -35,8 +39,18 @@ const refreshSites = async () => {
   try {
     loading.value = true
     error.value = ''
-    sites.value = await fetchTemplateSites()
+    sites.value = []
+    productsLoaded.value = 0
     displayMode.value = 'filtered'
+    sites.value = await fetchTemplateSites({
+      onProgress: ({ sites: nextSites }) => {
+        sites.value = nextSites
+        productsLoaded.value = nextSites
+          .filter((site) => typeof site.profileImage === 'string' && site.profileImage.trim() !== '')
+          .reduce((total, site) => total + (site.productCount || 0), 0)
+      }
+    })
+    productsLoaded.value = productsListed.value
     refreshedAt.value = Math.floor(Date.now() / 1000)
   } catch (err) {
     error.value = err.message || 'Could not load Nsite discovery right now.'
@@ -74,58 +88,68 @@ onMounted(async () => {
         <span class="pill">Last refresh: {{ formatTime(refreshedAt) }}</span>
       </div>
 
-      <p class="mt-4 text-xs" :style="{ color: 'var(--muted)' }">Relays scanned: {{ defaultRelays.join(', ') }}</p>
-      <p class="mt-1 break-all text-xs" :style="{ color: 'var(--muted)' }">Template sources: {{ sourceNpubs.join(', ') }}</p>
-
-      <div v-if="!loading && !error" class="mt-6 grid gap-3 sm:grid-cols-2">
-        <button
-          type="button"
-          class="rounded-2xl border px-5 py-4 text-left transition"
-          :style="displayMode === 'filtered'
-            ? { borderColor: '#10b981', background: 'rgba(16,185,129,0.14)' }
-            : { borderColor: 'var(--line)', background: 'rgba(16,185,129,0.08)' }"
+      <div v-if="!error" class="mt-6 grid gap-3 sm:grid-cols-3">
+        <FlipCounterCard
+          label="Filtered list"
+          :value="imageBackedSites.length"
+          :active="displayMode === 'filtered'"
+          accent="#10b981"
+          tone="rgba(16,185,129,0.08)"
+          :loading="loading"
           @click="displayMode = 'filtered'"
-        >
-          <p class="text-xs font-bold uppercase tracking-[0.08em]" :style="{ color: 'var(--muted)' }">Filtered list</p>
-          <p class="mt-2 text-3xl font-black">{{ imageBackedSites.length }}</p>
-        </button>
+        />
 
-        <button
-          type="button"
-          class="rounded-2xl border px-5 py-4 text-left transition"
-          :style="displayMode === 'all'
-            ? { borderColor: '#3b82f6', background: 'rgba(59,130,246,0.14)' }
-            : { borderColor: 'var(--line)', background: 'rgba(59,130,246,0.08)' }"
+        <FlipCounterCard
+          label="Global amount"
+          :value="totalClonedBoutiques"
+          :active="displayMode === 'all'"
+          accent="#3b82f6"
+          shadow-color="#3b82f6"
+          tone="rgba(59,130,246,0.08)"
+          :loading="loading"
           @click="displayMode = 'all'"
-        >
-          <p class="text-xs font-bold uppercase tracking-[0.08em]" :style="{ color: 'var(--muted)' }">Global amount</p>
-          <p class="mt-2 text-3xl font-black">{{ totalClonedBoutiques }}</p>
-        </button>
+        />
+
+        <FlipCounterCard
+          label="Products listed"
+          :value="loading ? productsLoaded : productsListed"
+          :active="displayMode === 'filtered'"
+          accent="#f59e0b"
+          tone="rgba(245,158,11,0.08)"
+          :loading="loading"
+          @click="displayMode = 'filtered'"
+        />
       </div>
     </div>
   </section>
 
   <section class="mt-6">
-    <div v-if="loading" class="surface-card flex flex-col items-center gap-4 px-6 py-8 text-center">
+    <div v-if="loading" class="surface-card mb-3 flex flex-col items-center justify-center gap-1 px-3 py-2 text-center">
       <img
         src="/nostr-ostrich-running.gif"
         alt="Running ostrich while relay scan loads"
-        class="h-28 w-auto sm:h-32"
+        class="h-7 w-auto sm:h-8"
       >
-      <div class="space-y-1">
-        <p class="text-sm font-black">Scanning relays for related Nsites...</p>
-        <p class="text-xs" :style="{ color: 'var(--muted)' }">Checking clone lineage through muse and thief tags.</p>
-      </div>
+      <p class="text-[11px] font-semibold" :style="{ color: 'var(--muted)' }">
+        Fetching boutiques and products
+        <span class="inline-flex items-center gap-0.5" aria-hidden="true">
+          <span class="h-1 w-1 rounded-full bg-current animate-pulse" />
+          <span class="h-1 w-1 rounded-full bg-current animate-pulse [animation-delay:120ms]" />
+          <span class="h-1 w-1 rounded-full bg-current animate-pulse [animation-delay:240ms]" />
+        </span>
+      </p>
+      <p class="mt-1 text-[11px]" :style="{ color: 'var(--muted)' }">Relays scanned: {{ defaultRelays.join(', ') }}</p>
+      <p class="break-all text-[11px]" :style="{ color: 'var(--muted)' }">Template sources: {{ sourceNpubs.join(', ') }}</p>
     </div>
-    <p v-else-if="error" class="rounded-xl border border-red-300 bg-red-500/10 px-4 py-3 text-sm text-red-300">{{ error }}</p>
-    <p v-else-if="totalClonedBoutiques === 0" class="text-sm" :style="{ color: 'var(--muted)' }">
+    <p v-if="error && totalClonedBoutiques === 0" class="rounded-xl border border-red-300 bg-red-500/10 px-4 py-3 text-sm text-red-300">{{ error }}</p>
+    <p v-else-if="!loading && totalClonedBoutiques === 0" class="text-sm" :style="{ color: 'var(--muted)' }">
       No related Nsites found right now. Discovery is best-effort and improves as more manifests propagate.
     </p>
-    <p v-else-if="displayMode === 'filtered' && imageBackedSites.length === 0" class="text-sm" :style="{ color: 'var(--muted)' }">
+    <p v-else-if="!loading && displayMode === 'filtered' && imageBackedSites.length === 0" class="text-sm" :style="{ color: 'var(--muted)' }">
       Cloned boutiques were found, but none of them currently have a profile image set.
     </p>
 
-    <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div v-if="displayedSites.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <article v-for="site in displayedSites" :key="site.id" class="surface-card p-5 fade-in-up">
         <div class="mb-3 flex items-center gap-3">
           <img
