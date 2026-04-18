@@ -67,6 +67,14 @@ const formatTime = (unixTimestamp) => {
   })
 }
 
+const formatTodayDate = () => {
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).format(new Date()).replace(/\//g, ' / ')
+}
+
 onMounted(async () => {
   await refreshSites()
 })
@@ -85,7 +93,7 @@ onMounted(async () => {
         >
           {{ loading ? 'Scanning relays...' : 'Refresh discovery' }}
         </button>
-        <span class="pill">Last refresh: {{ formatTime(refreshedAt) }}</span>
+        <span class="pill">Last refresh: {{ formatTime(refreshedAt) }} | Today: {{ formatTodayDate() }}</span>
       </div>
 
       <div v-if="!error" class="mt-6 grid gap-3 sm:grid-cols-3">
