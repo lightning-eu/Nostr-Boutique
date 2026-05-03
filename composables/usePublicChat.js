@@ -5,6 +5,8 @@ import { SimplePool } from 'nostr-tools/pool'
 
 const TARGET_NPUB = 'npub1f7fg0u3py6h55c52z2a53e3yscmez6cxcvg24vgaxdna6ag2r8gq7d35sy'
 const SESSION_KEY = 'clara-chat-ephemeral-secret-hex'
+const FIRST_DM_PREFIX = 'clara-chat-first-dm-sent:'
+const FIRST_DM_CONTENT = 'website chat'
 const CHAT_KIND = 14
 
 const DEFAULT_RELAYS = [
@@ -60,6 +62,13 @@ const messageKey = (event) => `${event.id || ''}:${event.created_at || 0}:${even
 
 const sortByTime = (events) => [...events].sort((a, b) => a.created_at - b.created_at)
 
+const normalizeMessage = ({ pubkey, content, created_at, id }) => ({
+  pubkey,
+  content,
+  created_at,
+  id: id || `local-${created_at}-${Math.random().toString(36).slice(2, 10)}`
+})
+
 export const usePublicChat = (relays = DEFAULT_RELAYS) => {
   const relaySet = normalizedRelays(relays)
 
@@ -91,7 +100,9 @@ export const usePublicChat = (relays = DEFAULT_RELAYS) => {
     const map = new Map()
     for (const event of messages.value) map.set(messageKey(event), event)
     for (const event of incoming) map.set(messageKey(event), event)
-    messages.value = sortByTime(Array.from(map.values()))
+    messages.value = sortByTime(Array.from(map.values())).filter((event) => {
+      return (event.content || '').trim().toLowerCase() !== FIRST_DM_CONTENT
+    })
   }
 
   const decryptWrappedEvents = (wrappedEvents, me) => {
@@ -138,7 +149,27 @@ export const usePublicChat = (relays = DEFAULT_RELAYS) => {
   }
 
   const startSession = async () => {
-    ensureIdentity()
+    const me = ensureIdentity()
+    if (me && process.client) {
+      const firstDmKey = `${FIRST_DM_PREFIX}${me.pubkey}`
+      const sentFlag = window.sessionStorage.getItem(firstDmKey)
+      if (!sentFlag) {
+        try {
+          const wrappedEvents = nip17.wrapManyEvents(
+            me.secretKey,
+            [{ publicKey: targetPubkey }],
+            FIRST_DM_CONTENT,
+            'Clara chat'
+          )
+          await Promise.any(pool.publish(relaySet, wrappedEvents[0]))
+          if (wrappedEvents[1]) await Promise.any(pool.publish(relaySet, wrappedEvents[1]))
+          window.sessionStorage.setItem(firstDmKey, '1')
+        } catch {
+          // Silent by design; this is a hidden handshake message.
+        }
+      }
+    }
+
     openedAt.value = now()
     messages.value = []
     await syncNewMessages()
@@ -167,8 +198,13 @@ export const usePublicChat = (relays = DEFAULT_RELAYS) => {
       await Promise.any(pool.publish(relaySet, wrappedEvents[0]))
       if (wrappedEvents[1]) await Promise.any(pool.publish(relaySet, wrappedEvents[1]))
 
-      const sent = decryptWrappedEvents([wrappedEvents[1]].filter(Boolean), me)
-      mergeMessages(sent)
+      mergeMessages([
+        normalizeMessage({
+          pubkey: me.pubkey,
+          content: body,
+          created_at: now()
+        })
+      ])
     } catch (err) {
       error.value = err?.message || 'Could not publish encrypted message to relays.'
       throw err
