@@ -8,6 +8,7 @@ const SESSION_KEY = 'clara-chat-ephemeral-secret-hex'
 const FIRST_DM_PREFIX = 'clara-chat-first-dm-sent:'
 const FIRST_DM_CONTENT = 'website chat'
 const CHAT_KIND = 14
+const INITIAL_SYNC_WINDOW = 60 * 60 * 24 * 7
 
 const DEFAULT_RELAYS = [
   'wss://relay.ditto.pub',
@@ -49,18 +50,30 @@ const now = () => Math.floor(Date.now() / 1000)
 const loadOrCreateSecretKey = () => {
   if (!process.client) return null
 
-  const cachedHex = window.sessionStorage.getItem(SESSION_KEY)
+  const cachedHex = window.localStorage.getItem(SESSION_KEY)
   const cached = fromHex(cachedHex)
   if (cached && cached.length === 32) return cached
 
   const fresh = generateSecretKey()
-  window.sessionStorage.setItem(SESSION_KEY, toHex(fresh))
+  window.localStorage.setItem(SESSION_KEY, toHex(fresh))
   return fresh
 }
 
 const messageKey = (event) => `${event.id || ''}:${event.created_at || 0}:${event.pubkey || ''}`
 
 const sortByTime = (events) => [...events].sort((a, b) => a.created_at - b.created_at)
+
+const dedupeById = (events) => {
+  const seen = new Set()
+  const unique = []
+  for (const event of events) {
+    const id = event?.id
+    if (!id || seen.has(id)) continue
+    seen.add(id)
+    unique.push(event)
+  }
+  return unique
+}
 
 const normalizeMessage = ({ pubkey, content, created_at, id }) => ({
   pubkey,
@@ -78,6 +91,7 @@ export const usePublicChat = (relays = DEFAULT_RELAYS) => {
   const isSyncing = ref(false)
   const error = ref('')
   const openedAt = ref(0)
+  const lastSyncedAt = ref(0)
 
   const ensureIdentity = () => {
     if (!process.client) return null
@@ -127,52 +141,84 @@ export const usePublicChat = (relays = DEFAULT_RELAYS) => {
     return next
   }
 
-  const syncNewMessages = async () => {
+  const ensureFirstDmHandshake = async (me) => {
+    if (!process.client || !me) return
+
+    const firstDmKey = `${FIRST_DM_PREFIX}${me.pubkey}`
+    const sentFlag = window.localStorage.getItem(firstDmKey)
+    if (sentFlag) return
+
+    const wrappedEvents = nip17.wrapManyEvents(
+      me.secretKey,
+      [{ publicKey: targetPubkey }],
+      FIRST_DM_CONTENT,
+      'Clara chat'
+    )
+
+    await Promise.any(pool.publish(relaySet, wrappedEvents[0]))
+    if (wrappedEvents[1]) await Promise.any(pool.publish(relaySet, wrappedEvents[1]))
+    window.localStorage.setItem(firstDmKey, '1')
+  }
+
+  const syncNewMessages = async (options = {}) => {
+    const { forceFull = false, silent = false } = options
     error.value = ''
     const me = ensureIdentity()
     if (!me) return
 
-    isSyncing.value = true
+    if (!silent) isSyncing.value = true
     try {
-      const wrapped = await pool.querySync(relaySet, {
-        kinds: [1059],
-        '#p': [me.pubkey],
-        since: openedAt.value || now() - 60,
-        limit: 120
-      })
+      const currentTs = now()
+      const since = forceFull
+        ? Math.max(0, currentTs - INITIAL_SYNC_WINDOW)
+        : (lastSyncedAt.value || Math.max(0, openedAt.value - 15) || currentTs - 60)
+
+      const [inboundWrapped, outboundWrapped] = await Promise.all([
+        pool.querySync(relaySet, {
+          kinds: [1059],
+          '#p': [me.pubkey],
+          since,
+          limit: 140
+        }),
+        pool.querySync(relaySet, {
+          kinds: [1059],
+          '#p': [targetPubkey],
+          since,
+          limit: 140
+        })
+      ])
+
+      let wrapped = dedupeById([...inboundWrapped, ...outboundWrapped])
+      if (wrapped.length === 0) {
+        const fallbackWrapped = await pool.querySync(relaySet, {
+          kinds: [1059],
+          since,
+          limit: 240
+        })
+        wrapped = fallbackWrapped
+      }
+
       mergeMessages(decryptWrappedEvents(wrapped, me))
+      lastSyncedAt.value = currentTs
     } catch (err) {
       error.value = err?.message || 'Could not sync encrypted messages.'
     } finally {
-      isSyncing.value = false
+      if (!silent) isSyncing.value = false
     }
   }
 
   const startSession = async () => {
     const me = ensureIdentity()
     if (me && process.client) {
-      const firstDmKey = `${FIRST_DM_PREFIX}${me.pubkey}`
-      const sentFlag = window.sessionStorage.getItem(firstDmKey)
-      if (!sentFlag) {
-        try {
-          const wrappedEvents = nip17.wrapManyEvents(
-            me.secretKey,
-            [{ publicKey: targetPubkey }],
-            FIRST_DM_CONTENT,
-            'Clara chat'
-          )
-          await Promise.any(pool.publish(relaySet, wrappedEvents[0]))
-          if (wrappedEvents[1]) await Promise.any(pool.publish(relaySet, wrappedEvents[1]))
-          window.sessionStorage.setItem(firstDmKey, '1')
-        } catch {
-          // Silent by design; this is a hidden handshake message.
-        }
+      try {
+        await ensureFirstDmHandshake(me)
+      } catch {
+        // Silent by design; this is a hidden handshake message.
       }
     }
 
-    openedAt.value = now()
-    messages.value = []
-    await syncNewMessages()
+    if (!openedAt.value) openedAt.value = now()
+    await syncNewMessages({ forceFull: true })
   }
 
   const sendMessage = async (content) => {
@@ -188,6 +234,8 @@ export const usePublicChat = (relays = DEFAULT_RELAYS) => {
 
     isSending.value = true
     try {
+      await ensureFirstDmHandshake(me)
+
       const wrappedEvents = nip17.wrapManyEvents(
         me.secretKey,
         [{ publicKey: targetPubkey }],
@@ -215,10 +263,11 @@ export const usePublicChat = (relays = DEFAULT_RELAYS) => {
 
   const clearIdentity = () => {
     if (!process.client) return
-    window.sessionStorage.removeItem(SESSION_KEY)
+    window.localStorage.removeItem(SESSION_KEY)
     identity.value = null
     messages.value = []
     openedAt.value = 0
+    lastSyncedAt.value = 0
   }
 
   return {

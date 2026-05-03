@@ -84,7 +84,7 @@ watch(
 
     if (pollTimer.value) window.clearInterval(pollTimer.value)
     pollTimer.value = window.setInterval(() => {
-      syncNewMessages()
+      syncNewMessages({ silent: true })
     }, 12000)
   }
 )
@@ -127,7 +127,7 @@ onBeforeUnmount(() => {
         </header>
 
         <div class="max-h-72 min-h-44 space-y-2 overflow-y-auto px-3 py-3">
-          <p v-if="isSyncing" class="text-[10px] font-bold" :style="{ color: 'var(--muted)' }">
+          <p v-if="isSyncing && displayMessages.length <= 1" class="text-[10px] font-bold" :style="{ color: 'var(--muted)' }">
             Checking for replies...
           </p>
 
